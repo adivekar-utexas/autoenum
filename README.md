@@ -5,7 +5,7 @@ A fuzzy-matching, Pydantic compatible enum library for Python 3.
 `AutoEnum` is a replacement for Python's `Enum`, which has [many problems](https://www.acooke.org/cute/Pythonssad0.html). 
 
 The main problem is that the standard way of defining enums is not Pythonic:
-```
+```py
 from enum import Enum
 class Animal(Enum):
     Antelope = 1
@@ -15,7 +15,7 @@ class Animal(Enum):
 ```
 
 A while ago, Python 3 introduced the `auto` function to automatically assign values, which was an improvement:
-```
+```py
 from enum import Enum, auto
 class Animal(Enum):
     Antelope = auto()
@@ -31,7 +31,7 @@ But inbuilt Python enums still have a lot of problems:
 - No [Pydantic](https://pypi.org/project/pydantic/) compatibility
   
 The `autoenum` library fixes all these problems. It is a single-file library with behavior very similar to `auto()` usage above:
-```
+```py
 from autoenum import AutoEnum, auto
 class Animal(AutoEnum):   ## Only the superclass is changed.
     Antelope = auto()
@@ -63,7 +63,7 @@ AutoEnum has been used for years in production systems, and has only gotten fast
 ## Feature-list
 
 Lets describe the features of AutoEnum. We will use 26 US cities and their aliases as our example:
-```
+```py
 from autoenum import AutoEnum, auto, alias
 class City(AutoEnum):
     Atlanta = auto()
@@ -157,7 +157,7 @@ By default, the following characters are ignored:
 
 You can also write your own fuzzy-matching logic by overriding `_normalize`:
 
-```
+```py
 class Animal(AutoEnum):
     Antelope = auto()
     Bandicoot = auto()
@@ -171,7 +171,7 @@ class Animal(AutoEnum):
 
 ### Aliasing
 Python enums, contrary to belief, *do* support aliasing, but it is not a well-known feature:
-```
+```py
 from enum import Enum
 class Animal(Enum):
     Antelope = 1
@@ -183,7 +183,7 @@ class Animal(Enum):
 It is not possible to mix the `auto` keyword with this style of aliasing in Python enums. 
 
 In AutoEnum, the `alias` function allows you to create aliases for an enum value:
-```
+```py
 from autoenum import AutoEnum, auto, alias
 class Animal(AutoEnum):
     Antelope = auto()
@@ -210,7 +210,7 @@ Washington
 
 ### Pydantic compatibility
 You can use AutoEnum directly in [Pydantic](https://pypi.org/project/pydantic/) BaseModels alongside other Pydantic type-verification:
-```
+```py
 from pydantic import BaseModel, conint, confloat, constr
 class Company(BaseModel):
     name: constr(min_length=1)
