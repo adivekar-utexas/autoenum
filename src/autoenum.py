@@ -90,6 +90,8 @@ class AutoEnum(str, Enum):
                     )
                 cls._value2member_map_normalized_[normalized_e_name] = e
                 if e.value.startswith('alias:'):
+                    normalized_e_value: str = cls._normalize(e.value)  ## Add the alias-list to the lookup
+                    cls._value2member_map_normalized_[normalized_e_value] = e
                     e_names = literal_eval(e.value.removeprefix('alias:'))
                     for e_name in e_names:
                         normalized_e_name: str = cls._normalize(e_name)
