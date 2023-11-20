@@ -28,6 +28,7 @@ But inbuilt Python enums still have a lot of problems:
 - No fuzzy-matching
 - No support for aliases
 - Incompatible str() and repr() outputs
+- Unable to convert to JSON.
 - No [Pydantic](https://pypi.org/project/pydantic/) compatibility
   
 The `autoenum` library fixes all these problems. It is a single-file library with behavior very similar to `auto()` usage above:
@@ -207,6 +208,55 @@ If you are parsing addresses, it is pretty common to see multiple variants of ci
 >>> City('Washington') == City('Washington DC') == City('Washington D.C.')
 Washington
 ```
+### JSON compatibility
+Regular enums cannot be converted to JSON:
+```py
+import json
+from enum import Enum
+class Animal(Enum):
+    Antelope = 1
+    Bandicoot = 2
+    Cat = 3
+    Dog = 4
+```
+If you run `json.dumps`, it will throw an error:
+```
+>>> json.dumps([Animal.Cat, Animal.Dog])
+TypeError: Object of type Animal is not JSON serializable
+```
+
+The standard way to get around this is to convert all values to strings:
+```
+>>> json.dumps([str(a) for a in [Animal.Cat, Animal.Dog]])
+'["Animal.Cat", "Animal.Dog"]'
+```
+...but after de-jsonifying it, you get strings, not enums. You cannot convert these back into enums easily:
+```
+>>> animals: List[str] = json.loads(json.dumps([str(a) for a in [Animal.Cat, Animal.Dog]]))
+>>> animals
+['Animal.Cat', 'Animal.Dog']
+>>> animals: List[Animal] = [Animal(a) for a in animals]
+ValueError: 'Animal.Cat' is not a valid Animal
+```
+
+AutoEnum fixes all these problems; it is natively json-encodable and structures can be converted using `AutoEnum.convert_values(...)`:
+```py
+import json
+from autoenum import AutoEnum, auto
+class Animal(AutoEnum):
+    Antelope = auto()
+    Bandicoot = auto()
+    Cat = auto()
+    Dog = auto()
+
+>>> json.dumps([Animal.Cat, Animal.Dog])
+'["Cat", "Dog"]'
+>>> animals: List[Animal] = Animal.convert_values(json.loads(json.dumps([Animal.Cat, Animal.Dog])))
+>>> animals
+[Cat, Dog]
+>>> assert isinstance(animals[0], Animal) and isinstance(animals[1], Animal)
+```
+
 
 ### Pydantic compatibility
 You can use AutoEnum directly in [Pydantic](https://pypi.org/project/pydantic/) BaseModels alongside other Pydantic type-verification:
