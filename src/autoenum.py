@@ -3,7 +3,7 @@ from enum import Enum, auto
 from ast import literal_eval
 
 
-class alias:
+class alias(auto):
     def __init__(self, *aliases):
         if len(aliases) == 0:
             raise ValueError('Cannot have empty alias() call.')
@@ -11,9 +11,34 @@ class alias:
             if not isinstance(a, str):
                 raise ValueError(f'All aliases for must be strings; found alias of type {type(a)} having value: {a}')
         self.names = aliases
+        self.enum_name = None
+
+    def __repr__(self) -> str:
+        return str(self)
 
     def __str__(self):
+        if self.enum_name is not None:
+            return self.enum_name
+        return self.alias_repr
+
+    @property
+    def alias_repr(self) -> str:
         return str(f'alias:{list(self.names)}')
+
+    def __setattr__(self, attr_name: str, attr_value: Any):
+        if attr_name == 'value':
+            ## because alias subclasses auto and does not set value, enum.py:143 will try to set value
+            self.enum_name = attr_value
+        else:
+            super(alias, self).__setattr__(attr_name, attr_value)
+
+    def __getattribute__(self, attr_name: str):
+        if attr_name == 'value':
+            if object.__getattribute__(self, 'enum_name') is None:
+                ## Gets _auto_null as alias inherits auto class but does not set `value` class member; refer enum.py:142
+                return object.__getattribute__(self, 'value')
+            return self
+        return object.__getattribute__(self, attr_name)
 
 
 _DEFAULT_REMOVAL_TABLE = str.maketrans(
@@ -27,6 +52,11 @@ class AutoEnum(str, Enum):
     Utility class which can be subclassed to create enums using auto() and alias().
     Also provides utility methods for common enum operations.
     """
+
+    def __init__(self, value: Union[str, alias]):
+        self.aliases: Tuple[str, ...] = tuple()
+        if isinstance(value, alias):
+            self.aliases: Tuple[str, ...] = value.names
 
     @classmethod
     def _missing_(cls, enum_value: Any):
@@ -81,28 +111,22 @@ class AutoEnum(str, Enum):
     def _initialize_lookup(cls):
         if '_value2member_map_normalized_' not in cls.__dict__:  ## Caching values for fast retrieval.
             cls._value2member_map_normalized_ = {}
-            for e in list(cls):
-                normalized_e_name: str = cls._normalize(e.name)
+
+            def _set_normalized(e, normalized_e_name):
                 if normalized_e_name in cls._value2member_map_normalized_:
                     raise ValueError(
                         f'Cannot register enum "{e.name}"; '
                         f'another enum with the same normalized name "{normalized_e_name}" already exists.'
                     )
                 cls._value2member_map_normalized_[normalized_e_name] = e
-                if e.value.startswith('alias:'):
-                    normalized_e_value: str = cls._normalize(e.value)  ## Add the alias-list to the lookup
-                    cls._value2member_map_normalized_[normalized_e_value] = e
-                    e_names = literal_eval(e.value.removeprefix('alias:'))
-                    for e_name in e_names:
-                        normalized_e_name: str = cls._normalize(e_name)
-                        if normalized_e_name == cls._normalize(e.name):
-                            continue
-                        if normalized_e_name in cls._value2member_map_normalized_:
-                            raise ValueError(
-                                f'Cannot register enum "{e_name}"; '
-                                f'another enum with the same normalized name "{normalized_e_name}" already exists.'
-                            )
-                        cls._value2member_map_normalized_[normalized_e_name] = e
+
+            for e in list(cls):
+                _set_normalized(e, cls._normalize(e.name))
+                if len(e.aliases) > 0:
+                    ## Add the alias-repr to the lookup:
+                    _set_normalized(e, cls._normalize(alias(*e.aliases).alias_repr))
+                    for e_alias in e.aliases:
+                        _set_normalized(e, cls._normalize(e_alias))
 
     @classmethod
     def from_str(cls, enum_value: str, raise_error: bool = True) -> Optional:
@@ -122,7 +146,7 @@ class AutoEnum(str, Enum):
         cls._initialize_lookup()
         enum_obj: Optional[AutoEnum] = cls._value2member_map_normalized_.get(cls._normalize(enum_value))
         if enum_obj is None and raise_error is True:
-            raise ValueError(f'Could not find enum with value {enum_value}; available values are: {list(cls)}.')
+            raise ValueError(f'Could not find enum with value {repr(enum_value)}; available values are: {list(cls)}.')
         return enum_obj
 
     @classmethod
