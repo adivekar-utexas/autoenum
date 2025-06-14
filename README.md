@@ -58,7 +58,7 @@ ValueError: Could not find enum with value Jaguar; available values are: [Antelo
 None
 ```
 Accessing an enum value directly, e.g. `Animal.Antelope`, carries the same overhead as a normal enum access (~50 nanoseconds).
-Fuzzy matching runs very fast (~750,000 lookups/second on a 26-item enum for the default fuzzy-matching algorithm). 
+Fuzzy matching runs very fast (~175 ns/lookup i.e. ~5,700,000 lookups/second on a 26-item enum using the default fuzzy-matching algorithm).
 AutoEnum has been used for years in production systems, and has only gotten faster over time.
 
 ## Feature-list
