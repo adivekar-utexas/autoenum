@@ -249,6 +249,7 @@ def test_from_str_lookup_speed(n, threshold):
 def test_no_cache_from_str_lookup_speed(n, threshold):
     loop_times = []
     for _ in range(n):
+
         class Animal(AutoEnum):
             Antelope = auto()
             Bandicoot = auto()
@@ -293,6 +294,7 @@ def test_matches_any_lookup_speed(n, threshold):
 def test_no_cache_matches_any_lookup_speed(n, threshold):
     loop_times = []
     for _ in range(n):
+
         class Animal(AutoEnum):
             Antelope = auto()
             Bandicoot = auto()
