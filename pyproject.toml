@@ -30,9 +30,6 @@ pythonpath = ["src"]
 line-length = 110
 fix = true
 force-exclude = true
-extend-exclude = [
-    "__init__.py",
-]
 
 [tool.ruff.lint]
 fixable = [
