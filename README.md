@@ -1,10 +1,10 @@
-# AutoEnum
+# AutoEnum: Delightfully Simple Python Enums 🎯
 A fuzzy-matched, Pydantic-compatible enum library for Python 3.
 
 ## What's an AutoEnum?
 `AutoEnum` is a replacement for Python's `Enum`, which has [many problems](https://www.acooke.org/cute/Pythonssad0.html). 
 
-The main problem is that the standard way of defining enums is not Pythonic:
+The standard way of defining enums is not Pythonic:
 ```py
 from enum import Enum
 class Animal(Enum):
@@ -48,7 +48,7 @@ Antelope
 >>> Animal('Antelope')  ## Fuzzy-match a string entered by a user
 Antelope
 
->>> Animal('     antElope ')  ## Spacing & casing  is handled
+>>> Animal('     antElope_ ')  ## Spacing, casing and underscores are handled
 Antelope
 
 >>> Animal('Jaguar')  ## Throws an error 
@@ -61,9 +61,9 @@ Accessing an enum value directly, e.g. `Animal.Antelope`, carries the same overh
 Fuzzy matching runs very fast (~175 ns/lookup i.e. ~5,700,000 lookups/second on a 26-item enum using the default fuzzy-matching algorithm).
 AutoEnum has been used for years in production systems, and has only gotten faster over time.
 
-## Feature-list
+## Features
 
-Lets describe the features of AutoEnum. We will use 26 US cities and their aliases as our example:
+Consider an enum of 26 US cities with their common aliases:
 ```py
 from autoenum import AutoEnum, auto, alias
 class City(AutoEnum):
@@ -118,14 +118,14 @@ True
 True
 ```
 
-In Python code (if statements etc), it is prefered to match using `is`:
+In Python code (if statements etc), it is preferred to match using `is`:
 ```
 city = ... ## From previous code
 if city is City.Boston:
     ...
 ```
 
-### Robust to naming conventions
+### Robust naming conventions
 Different teams use different naming-conventions for their enums: 
 - Some use `NamesLikeThis` (PascalCase; class-name convention)
 - Others use `NAMES_LIKE_THIS` (Java and C++ enum convention)
@@ -171,7 +171,7 @@ class Animal(AutoEnum):
 ```
 
 ### Aliasing
-Python enums, contrary to belief, *do* support aliasing, but it is not a well-known feature:
+Python enums, contrary to belief, *do* support aliasing:
 ```py
 from enum import Enum
 class Animal(Enum):
@@ -183,7 +183,7 @@ class Animal(Enum):
 ```
 It is not possible to mix the `auto` keyword with this style of aliasing in Python enums. 
 
-In AutoEnum, the `alias` function allows you to create aliases for an enum value:
+In `autoenum` however, the `alias` function allows you to create aliases for an enum value:
 ```py
 from autoenum import AutoEnum, auto, alias
 class Animal(AutoEnum):
@@ -192,7 +192,7 @@ class Animal(AutoEnum):
     Cat = alias('Feline')
     Dog = auto()
 ```
-Then you can do:
+This lets you do:
 ```
 >>> Animal('Cat')
 Cat
@@ -208,6 +208,7 @@ If you are parsing addresses, it is pretty common to see multiple variants of ci
 >>> City('Washington') == City('Washington DC') == City('Washington D.C.')
 Washington
 ```
+
 ### JSON compatibility
 Regular enums cannot be converted to JSON:
 ```py
@@ -295,4 +296,21 @@ AutoEnums are printed and represented in a minmial, uniform fashion:
 'Boston'
 >>> repr(City.Boston)
 'Boston'
+```
+
+### Dynamic Enum creation
+You don't need to define an enum subclass at all! You can use `make_autoenum` to create one dynamically. All strings are converted to valid Python identifiers.
+```
+from autoenum import make_autoenum
+Color = make_autoenum("Color", ["RED", "Green   as   grass", "Blue33", "Yellow!!!"])
+>>> list(Color)
+[Color.Red, Color.Green_As_Grass, Color.Blue33, Color.Yellow]
+>>> Color("Red")
+Color.Red
+>>> Color("Green as grass")
+Color.Green_As_Grass
+>>> Color("blue33")
+Color.Blue33
+>>> Color("Yellow")
+Color.Yellow
 ```
