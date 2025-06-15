@@ -1,4 +1,6 @@
+import re
 import threading
+import warnings
 from enum import Enum, auto
 from functools import lru_cache
 from typing import (
@@ -269,3 +271,24 @@ class AutoEnum(str, Enum):
     @classmethod
     def convert_values_to_str(cls, d: Dict) -> Dict:
         return {k: (str(v) if isinstance(v, cls) else v) for k, v in d.items()}
+
+
+def make_autoenum(name: str, values: List[str]) -> type[AutoEnum]:
+    """
+    Dynamically creates an AutoEnum subclass named `name` from a list of strings.
+    """
+
+    # sanitize Python identifiers: letters, digits and underscores only
+    def to_identifier(s: str) -> str:
+        # replace non-word chars with underscore, strip leading digits
+        ident: str = re.sub(r"\W+", "_", s).lstrip("0123456789").lstrip("_").rstrip("_")
+        ident_capitalize: str = "_".join([x.capitalize() for x in ident.split("_")])
+        if s != ident:
+            warnings.warn(
+                f"We have converted '{s}' to '{ident_capitalize}' to make it a valid Python identifier"
+            )
+        return ident_capitalize
+
+    members = {to_identifier(v): auto() for v in values}
+    # Enum functional constructor:
+    return AutoEnum(name, members)

@@ -4,7 +4,7 @@ from typing import List
 
 import pytest
 
-from autoenum import AutoEnum, alias, auto
+from autoenum import AutoEnum, alias, auto, make_autoenum
 
 # Try importing pydantic, if not available, we'll skip those tests
 try:
@@ -149,6 +149,7 @@ def test_pydantic_integration():
     # Test with string input
     netflix = Company(name="Netflix", headquarters="Los Angeles", num_employees=12_000)
     assert netflix.headquarters == City.Los_Angeles
+    assert netflix.headquarters is City.Los_Angeles
 
     # Test JSON serialization
     json_str = netflix.json()
@@ -157,6 +158,7 @@ def test_pydantic_integration():
     # Test JSON deserialization
     loaded_company = Company.model_validate_json(json_str)
     assert loaded_company.headquarters == City.Los_Angeles
+    assert loaded_company.headquarters is City.Los_Angeles
 
 
 def test_string_representation():
@@ -218,3 +220,22 @@ def test_enum_iteration():
             "Cat" in Animal
         with pytest.raises(TypeError, match="unsupported operand type\\(s\\) for 'in': 'str' and 'EnumType'"):
             "Los Angeles" in City
+
+
+def test_make_autoenum():
+    """Test make_autoenum function"""
+
+    with pytest.warns(
+        UserWarning, match="We have converted 'Value 1' to 'Value_1' to make it a valid Python identifier"
+    ):
+        TestEnum = make_autoenum("TestEnum", ["Value 1", "Value2", "Value3"])
+        assert TestEnum.Value_1 == TestEnum("Value1")
+        assert TestEnum.Value2 == TestEnum("Value2")
+        assert TestEnum.Value3 == TestEnum("Value3")
+
+    Color = make_autoenum("Color", ["red", "green   grass", "Blue33", "Yellow!!!!!!!!!!!!3"])
+    assert Color.Red == Color("Red")
+    assert Color.Green_Grass == Color("Green-Grass")
+    assert Color.Blue33 == Color("Blue33")
+    assert Color.Yellow_3 == Color("yellow_3")
+    assert Color.Yellow_3 == Color("Yellow3")
